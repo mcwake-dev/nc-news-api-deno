@@ -1,0 +1,27 @@
+allow:
+  - net
+  - read
+  - env
+
+scripts:
+  dev: 
+    desc: Run dev server with live updating
+    cmd: app.ts
+    env: 
+      DENO_ENV: DEV
+    envFile: .env.dev
+    watch: true
+
+  seed-dev:
+    desc: Seed development database
+    cmd: deno run db/seeds/run-seed.ts
+    env:
+      DENO_ENV: DEV
+    envFile: .env.dev
+
+  seed-test:
+    desc: Seed testing database
+    cmd: db/seeds/run-seed.ts
+    env:
+      DENO_ENV: TEST
+    envFile: .env.test
