@@ -1,4 +1,4 @@
-import { ISeedComment } from "../../seeds/ISeedComment.ts";
+import { ISeedComment } from "../../interfaces/ISeedComment.ts";
 
 export const commentData: ISeedComment[] = [
   {

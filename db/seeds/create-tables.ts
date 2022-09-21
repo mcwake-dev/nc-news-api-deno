@@ -1,12 +1,21 @@
 import { runQuery } from "../connection.ts";
+import log from "../../utils/log.ts";
 
-export const createTables = async () => {
+const lg = log.getLogger();
+
+export const createTopicsTable = async () => {
+  lg.info("Creating topics table");
   await runQuery(`
     CREATE TABLE topics (
       slug VARCHAR(50) NOT NULL PRIMARY KEY,
       description VARCHAR(255) NOT NULL
     );
   `);
+  lg.info("Topics table created");
+};
+
+export const createUsersTable = async () => {
+  lg.info("Creating users table");
   await runQuery(`
     CREATE TABLE users (
       username VARCHAR(50) NOT NULL PRIMARY KEY,
@@ -16,6 +25,11 @@ export const createTables = async () => {
       password VARCHAR(100) NOT NULL
     );
   `);
+  lg.info("Users table created");
+};
+
+export const createArticlesTable = async () => {
+  lg.info("Creating articles table");
   await runQuery(`
     CREATE TABLE articles (
       article_id SERIAL PRIMARY KEY,
@@ -29,6 +43,11 @@ export const createTables = async () => {
       FOREIGN KEY (author) REFERENCES users (username) ON DELETE CASCADE
     )
   `);
+  lg.info("Articles table created");
+};
+
+export const createCommentsTable = async () => {
+  lg.info("Creating comments table");
   await runQuery(`
     CREATE TABLE comments (
       comment_id SERIAL PRIMARY KEY,
@@ -41,4 +60,14 @@ export const createTables = async () => {
       FOREIGN KEY (article_id) REFERENCES articles(article_id) ON DELETE CASCADE
     )
   `);
+  lg.info("Comments table created");
+};
+
+export const createTables = async () => {
+  lg.info("Creating tables");
+  await createTopicsTable();
+  await createUsersTable();
+  await createArticlesTable();
+  await createCommentsTable();
+  lg.info("Tables created");
 };

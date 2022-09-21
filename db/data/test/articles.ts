@@ -1,4 +1,4 @@
-import { ISeedArticle } from "../../seeds/ISeedArticle.ts";
+import { ISeedArticle } from "../../interfaces/ISeedArticle.ts";
 
 export const articleData: ISeedArticle[] = [
   {

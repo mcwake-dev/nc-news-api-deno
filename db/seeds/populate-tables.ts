@@ -1,14 +1,18 @@
 import { format } from "https://deno.land/x/pg_format@v1.0.0/index.js";
 
+import log from "../../utils/log.ts";
 import { runQuery } from "../connection.ts";
 import { hash } from "../../utils/password.ts";
-import { ISeedData } from "./ISeedData.ts";
-import { ISeedArticle } from "./ISeedArticle.ts";
-import { ISeedComment } from "./ISeedComment.ts";
-import { ISeedUser } from "./ISeedUser.ts";
-import { ISeedTopic } from "./ISeedTopic.ts";
+import { ISeedData } from "../interfaces/ISeedData.ts";
+import { ISeedArticle } from "../interfaces/ISeedArticle.ts";
+import { ISeedComment } from "../interfaces/ISeedComment.ts";
+import { ISeedUser } from "../interfaces/ISeedUser.ts";
+import { ISeedTopic } from "../interfaces/ISeedTopic.ts";
+
+const lg = log.getLogger();
 
 export const populateArticles = async (articleData: ISeedArticle[]) => {
+  lg.info("Populating articles table");
   await runQuery(
     format(
       `
@@ -24,9 +28,11 @@ export const populateArticles = async (articleData: ISeedArticle[]) => {
       ]),
     ),
   );
+  lg.info("Articles table populated");
 };
 
 export const populateComments = async (commentData: ISeedComment[]) => {
+  lg.info("Populating comments table");
   await runQuery(
     format(
       `
@@ -41,9 +47,11 @@ export const populateComments = async (commentData: ISeedComment[]) => {
       ]),
     ),
   );
+  lg.info("Comments table populated");
 };
 
 export const populateTopics = async (topicData: ISeedTopic[]) => {
+  lg.info("Populating topics table");
   await runQuery(
     format(
       `
@@ -52,9 +60,11 @@ export const populateTopics = async (topicData: ISeedTopic[]) => {
       topicData.map(({ slug, description }) => [slug, description]),
     ),
   );
+  lg.info("Topics table populated");
 };
 
 export const populateUsers = async (userData: ISeedUser[]) => {
+  lg.info("Populating users table");
   const users = await Promise.all(userData.map(async (
     { username, firstName, surname, password, avatar_url },
   ) => [username, firstName, surname, await hash(password), avatar_url]));
@@ -65,6 +75,7 @@ export const populateUsers = async (userData: ISeedUser[]) => {
       users,
     ),
   );
+  lg.info("Users table populated");
 };
 
 export const populateTables = async (

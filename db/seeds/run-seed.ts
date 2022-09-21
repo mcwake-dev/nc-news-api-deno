@@ -1,3 +1,4 @@
+import log from "../../utils/log.ts";
 import * as devData from "../data/dev/index.ts";
 import * as testData from "../data/test/index.ts";
 import { deleteTables } from "./delete-tables.ts";
@@ -5,11 +6,14 @@ import { createTables } from "./create-tables.ts";
 import { populateTables } from "./populate-tables.ts";
 
 const env = Deno.env.get("DENO_ENV");
+const lg = log.getLogger();
 
-console.log(env);
+lg.info("Seeding");
 await deleteTables();
+
 await createTables();
 
+lg.info(`Populating tables with ${env} data`);
 switch (env) {
   case "DEV":
     await populateTables(devData);
@@ -19,5 +23,6 @@ switch (env) {
     break;
   default:
     throw new Error("INVALID ENV");
-    break;
 }
+lg.info("Tables populated");
+lg.info("Seeding complete");

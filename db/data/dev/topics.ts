@@ -1,4 +1,4 @@
-import { ISeedTopic } from "../../seeds/ISeedTopic.ts";
+import { ISeedTopic } from "../../interfaces/ISeedTopic.ts";
 
 export const topicData: ISeedTopic[] = [
   { description: "Code is love, code is life", slug: "coding" },

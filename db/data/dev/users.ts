@@ -1,4 +1,4 @@
-import { ISeedUser } from "../../seeds/ISeedUser.ts";
+import { ISeedUser } from "../../interfaces/ISeedUser.ts";
 
 export const userData: ISeedUser[] = [
   {

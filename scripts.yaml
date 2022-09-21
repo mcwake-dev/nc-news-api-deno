@@ -14,7 +14,7 @@ scripts:
 
   seed-dev:
     desc: Seed development database
-    cmd: deno run db/seeds/run-seed.ts
+    cmd: deno run --unstable db/seeds/run-seed.ts
     env:
       DENO_ENV: DEV
     envFile: .env.dev
