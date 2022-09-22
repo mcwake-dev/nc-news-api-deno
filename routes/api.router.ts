@@ -1,4 +1,5 @@
-import { Router } from "https://deno.land/x/oak/mod.ts";
+import { Router } from "https://deno.land/x/oak@v11.1.0/mod.ts";
+import { validationError } from "../middleware/validation-error.middleware.ts";
 
 import { router as articleRouter } from "./articles.router.ts";
 import { router as commentRouter } from "./comments.router.ts";
@@ -7,6 +8,7 @@ import { router as usersRouter } from "./users.router.ts";
 
 const router = new Router();
 
+router.use(validationError);
 router.use("/api/articles", articleRouter.routes());
 router.use("/api/comments", commentRouter.routes());
 router.use("/api/topics", topicsRouter.routes());
