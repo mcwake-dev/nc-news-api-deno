@@ -8,4 +8,4 @@ const app = new Application();
 app.use(oakCors());
 app.use(apiRouter.routes());
 
-await app.listen({ port: 8000 });
+export default app;
