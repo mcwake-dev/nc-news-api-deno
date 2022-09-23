@@ -5,6 +5,19 @@ import { runQuery } from "../db/connection.ts";
 
 const lg = log.getLogger();
 
+export const numberOfArticles = async () => {
+  lg.info(`Total Number of Articles`);
+
+  const results = await runQuery(
+    `SELECT COUNT(articles.article_id)::int AS total FROM articles;`,
+  );
+  const totalRow = results.rows[0] as Record<string, unknown>;
+
+  lg.info(`Found ${totalRow["total"]} articles`);
+
+  return totalRow["total"];
+};
+
 export const selectArticle = async (article_id: number) => {
   lg.info(`Select article with ID ${article_id}`);
 
@@ -31,16 +44,20 @@ export const selectArticle = async (article_id: number) => {
 };
 
 export const selectArticles = async (
-  sort_by = "created_at",
-  order = "desc",
-  topic = null,
-  author = null,
+  sort_by: string,
+  order: string,
+  topic: string,
+  author: string,
+  limit: number,
+  offset: number,
 ) => {
   lg.info(`Select articles with following criteria:`);
   lg.info(`* sort by ${sort_by}`);
   lg.info(`* order ${order}`);
   lg.info(`* topic ${topic}`);
   lg.info(`* author ${author}`);
+  lg.info(`* limit ${limit}`);
+  lg.info(`* offset ${offset}`);
 
   const baseQuery = `
     SELECT articles.author, 
@@ -49,13 +66,15 @@ export const selectArticles = async (
         articles.topic, 
         articles.created_at, 
         articles.votes, 
-        COUNT(comment_id) AS comment_count
+        COUNT(comment_id)::int AS comment_count
     FROM articles LEFT JOIN comments on articles.article_id = comments.article_id
     ${topic && author ? "WHERE topic = $1 AND articles.author = $2" : ""}
     ${topic && !author ? "WHERE topic = $1" : ""}
     ${author && !topic ? "WHERE articles.author = $1" : ""}
     GROUP BY articles.article_id
     ORDER BY ${sort_by} ${order}, title ${order}
+    LIMIT ${limit} OFFSET ${offset}
+
 `;
   let results;
 
@@ -68,7 +87,7 @@ export const selectArticles = async (
     results = await runQuery(baseQuery);
   }
 
-  lg.info(`Found ${results.rows} results`);
+  lg.info(`Found ${results.rows.length} results`);
 
   return results.rows;
 };

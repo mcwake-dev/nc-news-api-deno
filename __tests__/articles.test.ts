@@ -44,3 +44,69 @@ Deno.test("GET /api/articles/:article_id", async (t) => {
     },
   );
 });
+
+Deno.test("GET /api/articles/", async (t) => {
+  await t.step(
+    "should respond with a list of LIMIT articles and a total number of articles when passed a valid sort, sort order, limit and offset",
+    async () => {
+      const request = await superoak(app);
+      const articleResponse = await request.get(
+        "/api/articles?sort_by=created_at&order=desc&limit=10&offset=0",
+      ).expect(200);
+
+      assertEquals(articleResponse.body.total, 12);
+      assertEquals(articleResponse.body.articles.length, 10);
+    },
+  );
+  await t.step(
+    "invalid sorts are rejected",
+    async () => {
+      const request = await superoak(app);
+      await request.get(
+        "/api/articles?sort_by=blahblahblah&order=desc&limit=10&offset=0",
+      ).expect(400);
+    },
+  );
+  await t.step(
+    "invalid sort orders are rejected",
+    async () => {
+      const request = await superoak(app);
+      await request.get(
+        "/api/articles?sort_by=created_at&order=blahblahblah&limit=10&offset=0",
+      ).expect(400);
+    },
+  );
+  await t.step(
+    "invalid limits are rejected",
+    async () => {
+      const request = await superoak(app);
+      await request.get(
+        "/api/articles?sort_by=created_at&order=asc&limit=99999&offset=0",
+      ).expect(400);
+    },
+  );
+  await t.step(
+    "only LIMIT values are returned",
+    async () => {
+      const request = await superoak(app);
+      const articleResponse = await request.get(
+        "/api/articles?sort_by=created_at&order=asc&limit=20&offset=0",
+      ).expect(200);
+
+      assertEquals(articleResponse.body.total, 12);
+      assertEquals(articleResponse.body.articles.length, 12);
+    },
+  );
+  await t.step(
+    "only LIMIT values after OFFSET are returned",
+    async () => {
+      const request = await superoak(app);
+      const articleResponse = await request.get(
+        "/api/articles?sort_by=created_at&order=asc&limit=10&offset=2",
+      ).expect(200);
+
+      assertEquals(articleResponse.body.total, 12);
+      assertEquals(articleResponse.body.articles.length, 10);
+    },
+  );
+});
