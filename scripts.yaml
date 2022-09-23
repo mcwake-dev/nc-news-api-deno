@@ -6,7 +6,7 @@ allow:
 scripts:
   dev: 
     desc: Run dev server with live updating
-    cmd: app.ts
+    cmd: main.ts
     env: 
       DENO_ENV: DEV
     envFile: .env.dev
