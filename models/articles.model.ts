@@ -2,10 +2,11 @@ import { format } from "https://deno.land/x/pg_format@v1.0.0/index.js";
 
 import log from "../utils/log.ts";
 import pool from "../db/connection.ts";
+import IArticle from "../interfaces/IArticle.ts";
 
 const lg = log.getLogger();
 
-export const numberOfArticles = async () => {
+export const numberOfArticles = async (): Promise<number> => {
   let client;
 
   lg.info(`Total Number of Articles`);
@@ -19,13 +20,13 @@ export const numberOfArticles = async () => {
 
     lg.info(`Found ${totalRow["total"]} articles`);
 
-    return totalRow["total"];
+    return parseInt(totalRow["total"] as string);
   } finally {
     client?.release();
   }
 };
 
-export const selectArticle = async (article_id: number) => {
+export const selectArticle = async (article_id: number): Promise<IArticle> => {
   let client;
 
   lg.info(`Select article with ID ${article_id}`);
@@ -51,7 +52,7 @@ export const selectArticle = async (article_id: number) => {
 
     lg.info(`Found ${results.rows.length} results`);
 
-    return results.rows[0];
+    return results.rows[0] as IArticle;
   } finally {
     client?.release();
   }
@@ -64,7 +65,7 @@ export const selectArticles = async (
   author: string,
   limit: number,
   offset: number,
-) => {
+): Promise<IArticle[]> => {
   lg.info(`Select articles with following criteria:`);
   lg.info(`* sort by ${sort_by}`);
   lg.info(`* order ${order}`);
@@ -110,13 +111,16 @@ export const selectArticles = async (
 
     lg.info(`Found ${results.rows.length} results`);
 
-    return results.rows;
+    return results.rows as IArticle[];
   } finally {
     client?.release();
   }
 };
 
-export const updateArticle = async (article_id: number, inc_votes: number) => {
+export const updateArticle = async (
+  article_id: number,
+  inc_votes: number,
+): Promise<IArticle> => {
   let client;
 
   lg.info(`Update article with ID ${article_id}`);
@@ -132,7 +136,7 @@ export const updateArticle = async (article_id: number, inc_votes: number) => {
 
     lg.info(`Articles updated: ${results.rows.length}`);
 
-    return results.rows[0];
+    return results.rows[0] as IArticle;
   } finally {
     client?.release();
   }
@@ -186,14 +190,15 @@ export const deleteArticle = async (article_id: number) => {
   let client;
   try {
     client = await pool.connect();
-    const result = await client.queryObject(format(
+    const result = await client.queryObject(
       `
       DELETE FROM articles WHERE article_id = $1;
     `,
       [article_id],
-    ));
+    );
+    const affectedRows = result?.rowCount || 0;
 
-    return result.rowCount === 1;
+    return affectedRows > 0;
   } finally {
     client?.release();
   }

@@ -2,7 +2,9 @@ import { assertEquals } from "https://deno.land/std@0.156.0/testing/asserts.ts";
 import { superoak } from "https://deno.land/x/superoak@4.7.0/mod.ts";
 
 import app from "../app.ts";
+import pool from "../db/connection.ts";
 import "../db/seeds/run-seed.ts";
+import IArticle from "../interfaces/IArticle.ts";
 
 Deno.test("GET /api/articles/:article_id", async (t) => {
   await t.step(
@@ -200,4 +202,50 @@ Deno.test("PATCH /api/articles/:article_id", async (t) => {
         .expect(400);
     },
   );
+});
+
+Deno.test("DELETE /api/articles/:article_id", async (t) => {
+  const client = await pool.connect();
+
+  try {
+    const articleResult = await client.queryObject(
+      "INSERT INTO articles (title, topic, author, body, created_at, votes) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;",
+      [
+        "Living in the shadow of a great man",
+        "mitch",
+        "butter_bridge",
+        "I find this existence challenging",
+        new Date(1594329060000),
+        100,
+      ],
+    );
+    const articleToDelete: IArticle = articleResult.rows[0] as IArticle;
+
+    await t.step(
+      "should delete an article when supplied with a valid, existent article ID, returning a 204",
+      async () => {
+        console.log(articleToDelete.article_id);
+        const request = await superoak(app);
+        await request
+          .delete(`/api/articles/${articleToDelete.article_id}`)
+          .expect(204);
+      },
+    );
+    await t.step(
+      "should return a 404 error if the article ID does not exist",
+      async () => {
+        const request = await superoak(app);
+        await request.delete(`/api/articles/9999`).expect(404);
+      },
+    );
+    await t.step(
+      "should return a 400 error if an invalid article ID is supplied",
+      async () => {
+        const request = await superoak(app);
+        await request.delete(`/api/articles/:blablabla`).expect(400);
+      },
+    );
+  } finally {
+    client?.release();
+  }
 });

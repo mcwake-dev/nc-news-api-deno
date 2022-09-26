@@ -1,4 +1,5 @@
 import {
+  deleteArticle,
   numberOfArticles,
   selectArticle,
   selectArticles,
@@ -18,12 +19,10 @@ export const getArticle = async (ctx: any) => {
 
   const article = await selectArticle(article_id);
 
-  ctx.assert(article, 404, "Article not found");
-
   lg.info(`Article ID ${article_id} found`);
 
   ctx.response.status = 200;
-  ctx.response.body = { article };
+  ctx.response.body = { success: true, article };
 };
 
 // deno-lint-ignore no-explicit-any
@@ -50,7 +49,7 @@ export const getArticles = async (ctx: any) => {
   lg.info(`Found ${total} articles`);
 
   ctx.response.status = 200;
-  ctx.response.body = { articles, total };
+  ctx.response.body = { success: true, articles, total };
 };
 
 // deno-lint-ignore no-explicit-any
@@ -59,15 +58,24 @@ export const patchArticle = async (ctx: any) => {
 
   const body = await ctx.request.body().value;
   const article_id: number = parseInt(ctx.params.article_id);
-  const articleToPatch = await selectArticle(article_id);
-
-  ctx.assert(articleToPatch, 404, "Article not found");
-
   const inc_votes: number = parseInt(body.inc_votes);
   const article = await updateArticle(article_id, inc_votes);
 
   lg.info("Article patched");
 
   ctx.response.status = 200;
-  ctx.response.body = { article };
+  ctx.response.body = { success: true, article };
+};
+
+// deno-lint-ignore no-explicit-any
+export const removeArticle = async (ctx: any) => {
+  lg.info("Delete article");
+
+  const article_id: number = parseInt(ctx.params.article_id);
+
+  await deleteArticle(article_id);
+
+  lg.info("Article deleted");
+
+  ctx.response.status = 204;
 };
