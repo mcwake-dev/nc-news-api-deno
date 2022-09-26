@@ -249,3 +249,59 @@ Deno.test("DELETE /api/articles/:article_id", async (t) => {
     client?.release();
   }
 });
+
+Deno.test("POST /api/articles", async (t) => {
+  await t.step(
+    "should return a new article and a 201 when passed a valid new article object",
+    async () => {
+      const request = await superoak(app);
+      await request.post("/api/articles")
+        .send({
+          author: "icellusedkars",
+          title: "A nice title",
+          body: "A nice body (for an article)",
+          topic: "cats",
+        })
+        .expect(201);
+    },
+  );
+  await t.step(
+    "should return a 400 error if required parameters are missing",
+    async () => {
+      const request = await superoak(app);
+      await request.post("/api/articles")
+        .send({
+          title: "A nice title",
+          body: "A nice body (for an article)",
+          topic: "cats",
+        })
+        .expect(400);
+    },
+  );
+  await t.step("should return a 404 error if user does not exist", async () => {
+    const request = await superoak(app);
+    await request.post("/api/articles")
+      .send({
+        author: "sirnotappearinginthisapi",
+        title: "A nice title",
+        body: "A nice body (for an article)",
+        topic: "cats",
+      })
+      .expect(404);
+  });
+  await t.step(
+    "should return a 404 error if topic does not exist",
+    async () => {
+      const request = await superoak(app);
+      await request
+        .post("/api/articles")
+        .send({
+          author: "sirnotappearinginthisapi",
+          title: "A nice title",
+          body: "A nice body (for an article)",
+          topic: "amagicalnonexistenttopic",
+        })
+        .expect(404);
+    },
+  );
+});

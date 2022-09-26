@@ -142,50 +142,6 @@ export const updateArticle = async (
   }
 };
 
-export const selectArticleComments = async (article_id: number) => {
-  let client;
-
-  lg.info(`Get comments for article ${article_id}`);
-
-  try {
-    client = await pool.connect();
-    const results = await client.queryObject(format(
-      `
-            SELECT comments.* 
-            FROM comments 
-            WHERE article_id = $1;
-        `,
-      [article_id],
-    ));
-
-    return results.rows;
-  } finally {
-    client?.release();
-  }
-};
-
-export const insertArticleComment = async (
-  article_id: number,
-  author: string,
-  body: string,
-) => {
-  let client;
-
-  try {
-    client = await pool.connect();
-    const results = await client.queryObject(format(
-      `
-    INSERT INTO comments (article_id, author, body) VALUES ($1, $2, $3) RETURNING *;
-  `,
-      [article_id, author, body],
-    ));
-
-    return results.rows[0];
-  } finally {
-    client?.release();
-  }
-};
-
 export const deleteArticle = async (article_id: number) => {
   let client;
   try {
@@ -213,12 +169,12 @@ export const insertArticle = async (
   let client;
   try {
     client = await pool.connect();
-    const result = await client.queryObject(format(
+    const result = await client.queryObject(
       `
     INSERT INTO articles (author, title, body, topic) VALUES ($1, $2, $3, $4) RETURNING *;
   `,
       [author, title, body, topic],
-    ));
+    );
 
     return result.rows[0];
   } finally {

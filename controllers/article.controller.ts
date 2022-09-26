@@ -1,5 +1,6 @@
 import {
   deleteArticle,
+  insertArticle,
   numberOfArticles,
   selectArticle,
   selectArticles,
@@ -78,4 +79,28 @@ export const removeArticle = async (ctx: any) => {
   lg.info("Article deleted");
 
   ctx.response.status = 204;
+};
+
+// deno-lint-ignore no-explicit-any
+export const postArticle = async (ctx: any) => {
+  lg.info("Post article");
+
+  const postBody = await ctx.request.body().value;
+  const { author, title, body, topic } = postBody;
+  const article = await insertArticle(author, title, body, topic);
+
+  lg.info("Article created");
+
+  ctx.response.status = 201;
+  ctx.response.body = { article };
+};
+
+// deno-lint-ignore no-explicit-any
+export const mostRecent = async (ctx: any) => {
+  lg.info("Most recent articles");
+};
+
+// deno-lint-ignore no-explicit-any
+export const highestVoted = async (ctx: any) => {
+  lg.info("Highest voted articles");
 };
