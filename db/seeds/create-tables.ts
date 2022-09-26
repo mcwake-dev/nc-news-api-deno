@@ -1,11 +1,13 @@
-import { runQuery } from "../connection.ts";
+import { PoolClient } from "https://deno.land/x/postgres@v0.16.1/mod.ts";
+
+import pool from "../connection.ts";
 import log from "../../utils/log.ts";
 
 const lg = log.getLogger();
 
-export const createTopicsTable = async () => {
+export const createTopicsTable = async (client: PoolClient) => {
   lg.info("Creating topics table");
-  await runQuery(`
+  await client.queryObject(`
     CREATE TABLE topics (
       slug VARCHAR(50) NOT NULL PRIMARY KEY,
       description VARCHAR(255) NOT NULL
@@ -14,9 +16,9 @@ export const createTopicsTable = async () => {
   lg.info("Topics table created");
 };
 
-export const createUsersTable = async () => {
+export const createUsersTable = async (client: PoolClient) => {
   lg.info("Creating users table");
-  await runQuery(`
+  await client.queryObject(`
     CREATE TABLE users (
       username VARCHAR(50) NOT NULL PRIMARY KEY,
       avatar_url VARCHAR(255) NOT NULL,
@@ -28,9 +30,9 @@ export const createUsersTable = async () => {
   lg.info("Users table created");
 };
 
-export const createArticlesTable = async () => {
+export const createArticlesTable = async (client: PoolClient) => {
   lg.info("Creating articles table");
-  await runQuery(`
+  await client.queryObject(`
     CREATE TABLE articles (
       article_id SERIAL PRIMARY KEY,
       title VARCHAR(255) NOT NULL,
@@ -46,9 +48,9 @@ export const createArticlesTable = async () => {
   lg.info("Articles table created");
 };
 
-export const createCommentsTable = async () => {
+export const createCommentsTable = async (client: PoolClient) => {
   lg.info("Creating comments table");
-  await runQuery(`
+  await client.queryObject(`
     CREATE TABLE comments (
       comment_id SERIAL PRIMARY KEY,
       author VARCHAR(50) NOT NULL,
@@ -64,10 +66,17 @@ export const createCommentsTable = async () => {
 };
 
 export const createTables = async () => {
-  lg.info("Creating tables");
-  await createTopicsTable();
-  await createUsersTable();
-  await createArticlesTable();
-  await createCommentsTable();
-  lg.info("Tables created");
+  let client;
+
+  try {
+    client = await pool.connect();
+    lg.info("Creating tables");
+    await createTopicsTable(client);
+    await createUsersTable(client);
+    await createArticlesTable(client);
+    await createCommentsTable(client);
+    lg.info("Tables created");
+  } finally {
+    client?.release();
+  }
 };

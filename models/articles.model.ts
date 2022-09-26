@@ -1,28 +1,39 @@
 import { format } from "https://deno.land/x/pg_format@v1.0.0/index.js";
 
 import log from "../utils/log.ts";
-import { runQuery } from "../db/connection.ts";
+import pool from "../db/connection.ts";
 
 const lg = log.getLogger();
 
 export const numberOfArticles = async () => {
+  let client;
+
   lg.info(`Total Number of Articles`);
 
-  const results = await runQuery(
-    `SELECT COUNT(articles.article_id)::int AS total FROM articles;`,
-  );
-  const totalRow = results.rows[0] as Record<string, unknown>;
+  try {
+    client = await pool.connect();
+    const results = await client.queryObject(
+      `SELECT COUNT(articles.article_id)::int AS total FROM articles;`,
+    );
+    const totalRow = results.rows[0] as Record<string, unknown>;
 
-  lg.info(`Found ${totalRow["total"]} articles`);
+    lg.info(`Found ${totalRow["total"]} articles`);
 
-  return totalRow["total"];
+    return totalRow["total"];
+  } finally {
+    client?.release();
+  }
 };
 
 export const selectArticle = async (article_id: number) => {
+  let client;
+
   lg.info(`Select article with ID ${article_id}`);
 
-  const results = await runQuery(
-    `
+  try {
+    client = await pool.connect();
+    const results = await client.queryObject(
+      `
         SELECT articles.author, 
             articles.title, 
             articles.article_id, 
@@ -35,12 +46,15 @@ export const selectArticle = async (article_id: number) => {
         WHERE articles.article_id = $1
         GROUP BY articles.article_id;
     `,
-    [article_id],
-  );
+      [article_id],
+    );
 
-  lg.info(`Found ${results.rows.length} results`);
+    lg.info(`Found ${results.rows.length} results`);
 
-  return results.rows[0];
+    return results.rows[0];
+  } finally {
+    client?.release();
+  }
 };
 
 export const selectArticles = async (
@@ -77,47 +91,73 @@ export const selectArticles = async (
 
 `;
   let results;
+  let client;
 
-  if (topic || author) {
-    results = await runQuery(format(
-      baseQuery,
-      [topic, author].filter((bind) => bind !== null),
-    ));
-  } else {
-    results = await runQuery(baseQuery);
+  try {
+    client = await pool.connect();
+
+    if (topic || author) {
+      results = await client.queryObject(
+        format(
+          baseQuery,
+          [topic, author].filter((bind) => bind !== null),
+        ),
+        [null],
+      );
+    } else {
+      results = await client.queryObject(baseQuery, []);
+    }
+
+    lg.info(`Found ${results.rows.length} results`);
+
+    return results.rows;
+  } finally {
+    client?.release();
   }
-
-  lg.info(`Found ${results.rows.length} results`);
-
-  return results.rows;
 };
 
 export const updateArticle = async (article_id: number, inc_votes: number) => {
+  let client;
+
   lg.info(`Update article with ID ${article_id}`);
 
-  const results = await runQuery(format(
-    `
+  try {
+    client = await pool.connect();
+    const results = await client.queryObject(
+      `
         UPDATE articles SET votes = votes + $1 WHERE article_id = $2 RETURNING *;
     `,
-    [inc_votes, article_id],
-  ));
+      [inc_votes, article_id],
+    );
 
-  lg.info(`Articles updated: ${results.rows.length}`);
+    lg.info(`Articles updated: ${results.rows.length}`);
 
-  return results.rows[0];
+    return results.rows[0];
+  } finally {
+    client?.release();
+  }
 };
 
 export const selectArticleComments = async (article_id: number) => {
-  const results = await runQuery(format(
-    `
+  let client;
+
+  lg.info(`Get comments for article ${article_id}`);
+
+  try {
+    client = await pool.connect();
+    const results = await client.queryObject(format(
+      `
             SELECT comments.* 
             FROM comments 
             WHERE article_id = $1;
         `,
-    [article_id],
-  ));
+      [article_id],
+    ));
 
-  return results.rows;
+    return results.rows;
+  } finally {
+    client?.release();
+  }
 };
 
 export const insertArticleComment = async (
@@ -125,25 +165,38 @@ export const insertArticleComment = async (
   author: string,
   body: string,
 ) => {
-  const results = await runQuery(format(
-    `
+  let client;
+
+  try {
+    client = await pool.connect();
+    const results = await client.queryObject(format(
+      `
     INSERT INTO comments (article_id, author, body) VALUES ($1, $2, $3) RETURNING *;
   `,
-    [article_id, author, body],
-  ));
+      [article_id, author, body],
+    ));
 
-  return results.rows[0];
+    return results.rows[0];
+  } finally {
+    client?.release();
+  }
 };
 
 export const deleteArticle = async (article_id: number) => {
-  const result = await runQuery(format(
-    `
+  let client;
+  try {
+    client = await pool.connect();
+    const result = await client.queryObject(format(
+      `
       DELETE FROM articles WHERE article_id = $1;
     `,
-    [article_id],
-  ));
+      [article_id],
+    ));
 
-  return result.rowCount === 1;
+    return result.rowCount === 1;
+  } finally {
+    client?.release();
+  }
 };
 
 export const insertArticle = async (
@@ -152,28 +205,45 @@ export const insertArticle = async (
   body: string,
   topic: string,
 ) => {
-  const result = await runQuery(format(
-    `
+  let client;
+  try {
+    client = await pool.connect();
+    const result = await client.queryObject(format(
+      `
     INSERT INTO articles (author, title, body, topic) VALUES ($1, $2, $3, $4) RETURNING *;
   `,
-    [author, title, body, topic],
-  ));
+      [author, title, body, topic],
+    ));
 
-  return result.rows[0];
+    return result.rows[0];
+  } finally {
+    client?.release();
+  }
 };
 
 export const mostRecentArticles = async () => {
-  const result = await runQuery(
-    `SELECT * FROM articles ORDER BY created_at DESC LIMIT 3;`,
-  );
-
-  return result.rows;
+  let client;
+  try {
+    client = await pool.connect();
+    const result = await client.queryObject(
+      `SELECT * FROM articles ORDER BY created_at DESC LIMIT 3;`,
+    );
+    return result.rows;
+  } finally {
+    client?.release();
+  }
 };
 
 export const highestVotedArticles = async () => {
-  const result = await runQuery(
-    `SELECT * FROM articles ORDER BY votes DESC LIMIT 3;`,
-  );
+  let client;
+  try {
+    client = await pool.connect();
+    const result = await client.queryObject(
+      `SELECT * FROM articles ORDER BY votes DESC LIMIT 3;`,
+    );
 
-  return result.rows;
+    return result.rows;
+  } finally {
+    client?.release();
+  }
 };

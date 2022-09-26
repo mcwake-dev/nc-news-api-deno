@@ -1,7 +1,8 @@
 import { format } from "https://deno.land/x/pg_format@v1.0.0/index.js";
+import { PoolClient } from "https://deno.land/x/postgres@v0.16.1/mod.ts";
 
 import log from "../../utils/log.ts";
-import { runQuery } from "../connection.ts";
+import pool from "../connection.ts";
 import { hash } from "../../utils/password.ts";
 import { ISeedData } from "../interfaces/ISeedData.ts";
 import { ISeedArticle } from "../interfaces/ISeedArticle.ts";
@@ -11,9 +12,12 @@ import { ISeedTopic } from "../interfaces/ISeedTopic.ts";
 
 const lg = log.getLogger();
 
-export const populateArticles = async (articleData: ISeedArticle[]) => {
+export const populateArticles = async (
+  client: PoolClient,
+  articleData: ISeedArticle[],
+) => {
   lg.info("Populating articles table");
-  await runQuery(
+  await client.queryObject(
     format(
       `
           INSERT INTO articles (title, body, topic, author, created_at, votes) VALUES %L RETURNING *;
@@ -31,9 +35,12 @@ export const populateArticles = async (articleData: ISeedArticle[]) => {
   lg.info("Articles table populated");
 };
 
-export const populateComments = async (commentData: ISeedComment[]) => {
+export const populateComments = async (
+  client: PoolClient,
+  commentData: ISeedComment[],
+) => {
   lg.info("Populating comments table");
-  await runQuery(
+  await client.queryObject(
     format(
       `
           INSERT INTO comments (author, article_id, votes, created_at, body) VALUES %L RETURNING *;
@@ -50,9 +57,12 @@ export const populateComments = async (commentData: ISeedComment[]) => {
   lg.info("Comments table populated");
 };
 
-export const populateTopics = async (topicData: ISeedTopic[]) => {
+export const populateTopics = async (
+  client: PoolClient,
+  topicData: ISeedTopic[],
+) => {
   lg.info("Populating topics table");
-  await runQuery(
+  await client.queryObject(
     format(
       `
         INSERT INTO topics (slug, description) VALUES %L RETURNING slug, description;
@@ -63,13 +73,18 @@ export const populateTopics = async (topicData: ISeedTopic[]) => {
   lg.info("Topics table populated");
 };
 
-export const populateUsers = async (userData: ISeedUser[]) => {
+export const populateUsers = async (
+  client: PoolClient,
+  userData: ISeedUser[],
+) => {
   lg.info("Populating users table");
-  const users = await Promise.all(userData.map(async (
-    { username, firstName, surname, password, avatar_url },
-  ) => [username, firstName, surname, await hash(password), avatar_url]));
+  const users = await Promise.all(
+    userData.map(async (
+      { username, firstName, surname, password, avatar_url },
+    ) => [username, firstName, surname, await hash(password), avatar_url]),
+  );
 
-  await runQuery(
+  await client.queryObject(
     format(
       `INSERT INTO users (username, firstName, surname, password, avatar_url) VALUES %L RETURNING *;`,
       users,
@@ -78,16 +93,21 @@ export const populateUsers = async (userData: ISeedUser[]) => {
   lg.info("Users table populated");
 };
 
-export const populateTables = async (
-  data: ISeedData,
-) => {
+export const populateTables = async (data: ISeedData) => {
   const { articleData, commentData, topicData, userData } = data;
 
-  await populateTopics(topicData);
+  let client;
 
-  await populateUsers(userData);
+  try {
+    client = await pool.connect();
+    await populateTopics(client, topicData);
 
-  await populateArticles(articleData);
+    await populateUsers(client, userData);
 
-  await populateComments(commentData);
+    await populateArticles(client, articleData);
+
+    await populateComments(client, commentData);
+  } finally {
+    client?.release();
+  }
 };

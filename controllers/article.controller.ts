@@ -2,6 +2,7 @@ import {
   numberOfArticles,
   selectArticle,
   selectArticles,
+  updateArticle,
 } from "../models/articles.model.ts";
 import log from "../utils/log.ts";
 
@@ -46,6 +47,27 @@ export const getArticles = async (ctx: any) => {
 
   const total = await numberOfArticles();
 
+  lg.info(`Found ${total} articles`);
+
   ctx.response.status = 200;
   ctx.response.body = { articles, total };
+};
+
+// deno-lint-ignore no-explicit-any
+export const patchArticle = async (ctx: any) => {
+  lg.info("Patch article");
+
+  const body = await ctx.request.body().value;
+  const article_id: number = parseInt(ctx.params.article_id);
+  const articleToPatch = await selectArticle(article_id);
+
+  ctx.assert(articleToPatch, 404, "Article not found");
+
+  const inc_votes: number = parseInt(body.inc_votes);
+  const article = await updateArticle(article_id, inc_votes);
+
+  lg.info("Article patched");
+
+  ctx.response.status = 200;
+  ctx.response.body = { article };
 };

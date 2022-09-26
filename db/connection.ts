@@ -8,16 +8,4 @@ const pool = new Pool(
   connectionPoolSize,
 );
 
-export async function runQuery(query: string, args?: [string | number]) {
-  const client = await pool.connect();
-
-  let result;
-
-  try {
-    result = await client.queryObject({ args, text: query });
-  } finally {
-    client.release();
-  }
-
-  return result;
-}
+export default pool;

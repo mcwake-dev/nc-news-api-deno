@@ -110,3 +110,94 @@ Deno.test("GET /api/articles/", async (t) => {
     },
   );
 });
+
+Deno.test("PATCH /api/articles/:article_id", async (t) => {
+  await t.step(
+    "should respond with an updated article when passed a valid article ID and valid request body (positive)",
+    async () => {
+      const request = await superoak(app);
+      const articleResponse = await request.patch("/api/articles/1")
+        .set({
+          "Content-Type": "application/json",
+        })
+        .send({
+          inc_votes: 1,
+        })
+        .expect(200);
+
+      assertEquals(articleResponse.body.article, {
+        article_id: 1,
+        title: "Living in the shadow of a great man",
+        topic: "mitch",
+        author: "butter_bridge",
+        body: "I find this existence challenging",
+        votes: 101,
+        created_at: "2020-07-09T20:11:00.000Z",
+      });
+    },
+  );
+  await t.step(
+    "should respond with an updated article when passed a valid article ID and valid request body (negative)",
+    async () => {
+      const request = await superoak(app);
+      const articleResponse = await request
+        .patch("/api/articles/1")
+        .set({
+          "Content-Type": "application/json",
+        })
+        .send({
+          inc_votes: -1,
+        })
+        .expect(200);
+
+      assertEquals(articleResponse.body.article, {
+        article_id: 1,
+        title: "Living in the shadow of a great man",
+        topic: "mitch",
+        author: "butter_bridge",
+        body: "I find this existence challenging",
+        votes: 100,
+        created_at: "2020-07-09T20:11:00.000Z",
+      });
+    },
+  );
+  await t.step(
+    "should respond with a 404 when passed a non-existent valid article ID",
+    async () => {
+      const request = await superoak(app);
+      await request.patch("/api/articles/999").set({
+        "Content-Type": "application/json",
+      }).send({ inc_votes: 1 }).expect(404);
+    },
+  );
+  await t.step(
+    "should respond with a 400 when passed an invalid article ID",
+    async () => {
+      const request = await superoak(app);
+      await request.patch("/api/articles/dave").set({
+        "Content-Type": "application/json",
+      }).send({ inc_votes: 1 }).expect(400);
+    },
+  );
+  await t.step(
+    "should respond with a 400 when passed a valid article ID but an invalid request body (key invalid)",
+    async () => {
+      const request = await superoak(app);
+      await request.patch("/api/articles/1").set({
+        "Content-Type": "application/json",
+      }).send({ nernerner: 1 }).expect(400);
+    },
+  );
+  await t.step(
+    "should respond with a 400 when passed a valid article ID but an invalid request body (key valid, value invalid)",
+    async () => {
+      const request = await superoak(app);
+      await request
+        .patch("/api/articles/1").set({
+          "Content-Type": "application/json",
+        })
+        .send({ inc_votes: "Wrongety Wrong Wrong" })
+        .expect(400);
+    },
+  );
+});
