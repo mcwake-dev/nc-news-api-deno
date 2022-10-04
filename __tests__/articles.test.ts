@@ -1,4 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.156.0/testing/asserts.ts";
+import { assert } from "https://deno.land/std@0.156.0/_util/assert.ts";
 import { superoak } from "https://deno.land/x/superoak@4.7.0/mod.ts";
 
 import app from "../app.ts";
@@ -304,4 +305,40 @@ Deno.test("POST /api/articles", async (t) => {
         .expect(404);
     },
   );
+});
+
+Deno.test("GET /api/articles/recent", async (t) => {
+  await t.step("should return a list of 3 most recent articles", async () => {
+    const request = await superoak(app);
+    await request
+      .get("/api/articles/recent")
+      .expect(200)
+      .then(({ body: { articles } }) => {
+        assertEquals(articles.length, 3);
+        assertEquals(articles[0].title, "A nice title");
+        assertEquals(
+          articles[1].title,
+          "Eight pug gifs that remind me of mitch",
+        );
+        assertEquals(articles[2].title, "A");
+      });
+  });
+});
+
+Deno.test("GET /api/articles/highest", async (t) => {
+  await t.step("should return a list of 3 highest voted articles", async () => {
+    const request = await superoak(app);
+    await request
+      .get("/api/articles/highest")
+      .expect(200)
+      .then(({ body: { articles } }) => {
+        assertEquals(articles.length, 3);
+        assertEquals(articles[0].title, "Living in the shadow of a great man");
+        assertEquals(articles[1].title, "Sony Vaio; or, The Laptop");
+        assertEquals(
+          articles[2].title,
+          "Eight pug gifs that remind me of mitch",
+        );
+      });
+  });
 });
