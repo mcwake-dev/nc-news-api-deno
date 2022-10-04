@@ -1,6 +1,8 @@
 import {
   deleteArticle,
+  highestVotedArticles,
   insertArticle,
+  mostRecentArticles,
   numberOfArticles,
   selectArticle,
   selectArticles,
@@ -98,9 +100,23 @@ export const postArticle = async (ctx: any) => {
 // deno-lint-ignore no-explicit-any
 export const mostRecent = async (ctx: any) => {
   lg.info("Most recent articles");
+
+  const mostRecent = await mostRecentArticles();
+
+  lg.info("Most recent articles retrieved");
+
+  ctx.response.status = 200;
+  ctx.response.body = { articles: mostRecent };
 };
 
 // deno-lint-ignore no-explicit-any
 export const highestVoted = async (ctx: any) => {
   lg.info("Highest voted articles");
+
+  const highestVoted = await highestVotedArticles();
+
+  lg.info("Highest voted articles retrieved");
+
+  ctx.response.status = 200;
+  ctx.response.body = { articles: highestVoted };
 };
